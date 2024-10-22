@@ -12,6 +12,7 @@ void ofApp::setup()
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	cam.setVerbose(true);
 	cam.listDevices();
+	cam.setDeviceID(1);
 
 	ofSetVerticalSync(true);
 	ofBackground(0);
@@ -67,7 +68,8 @@ void ofApp::draw()
 	// cam.draw(0, 0);
 	if (cameraImg.isAllocated())
 	{
-		cameraImg.draw(0, 0);
+		float scale = min((float)ofGetWidth() / cameraImg.getWidth(), (float)ofGetHeight() / cameraImg.getHeight());
+		cameraImg.draw(0, 0, cameraImg.getWidth() * scale, cameraImg.getHeight() * scale);
 	}
 
 	touchTableTracker_->draw();
@@ -103,6 +105,7 @@ void ofApp::keyPressed(int key)
 	if (key == 'g')
 	{
 		drawGui = !drawGui;
+		saveParam();
 	}
 	if (key == 'r')
 	{

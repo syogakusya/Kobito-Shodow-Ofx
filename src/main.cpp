@@ -1,13 +1,14 @@
 #include "ofMain.h"
 #include "ofApp.h"
 
-//window size
-const int w = 640;
-const int h = 480;
+// window size
+const int w = 800;
+const int h = 600;
 
-int main( ){
+int main()
+{
 	ofSetupOpenGL(w, h, OF_WINDOW);
-	ofApp* mainApp = new ofApp;
+	ofApp *mainApp = new ofApp;
 	mainApp->getWindowSize(w, h);
 	ofRunApp(mainApp);
 }

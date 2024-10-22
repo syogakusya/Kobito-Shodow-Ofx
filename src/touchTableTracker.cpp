@@ -190,7 +190,8 @@ void TouchTableThread::setParam(
 //--private method-------------------------------------------------
 void TouchTableThread::threadedFunction()
 {
-	contourFinder_->setAutoThreshold(true);
+	contourFinder_->setAutoThreshold(false); // 自動閾値設定をオフにする
+	contourFinder_->setInvert(false);				 // 反転をオフにする
 	while (isThreadRunning())
 	{
 		lock();
@@ -199,16 +200,27 @@ void TouchTableThread::threadedFunction()
 			img = ofxCv::toCv(*camera);
 			if (!img.empty())
 			{
-				cv::cvtColor(img, gray, cv::COLOR_RGB2GRAY);
+				cv::Mat hsv;
+				cv::cvtColor(img, hsv, cv::COLOR_RGB2HSV);
+
+				// 黒色の範囲を定義
+				cv::Scalar lowerBlack = cv::Scalar(0, 0, 0);
+				cv::Scalar upperBlack = cv::Scalar(180, 255, 50); // 明度を調整して黒の範囲を設定
+
+				cv::Mat blackMask;
+				cv::inRange(hsv, lowerBlack, upperBlack, blackMask);
+
 				if (!perspectiveMat.empty() && perspectiveMat.size() == cv::Size(3, 3))
 				{
-					cv::warpPerspective(gray, gray, perspectiveMat, gray.size(), cv::INTER_NEAREST);
+					cv::warpPerspective(blackMask, blackMask, perspectiveMat, blackMask.size(), cv::INTER_NEAREST);
 				}
-				cv::GaussianBlur(gray, gray, cv::Size(11, 11), 0, 0);
-				adjustGamma(gray, gamma);
 
-				resultImg = (isCalibMode) ? img : gray.clone();
-				contourFinder_->findContours(gray);
+				cv::GaussianBlur(blackMask, blackMask, cv::Size(11, 11), 0, 0);
+				adjustGamma(blackMask, gamma);
+
+				resultImg = (isCalibMode) ? img : blackMask.clone();
+				contourFinder_->setThreshold(threshold); // 閾値を設定
+				contourFinder_->findContours(blackMask);
 				tracker_->track(contourFinder_->getBoundingRects());
 				sendContourData(); // 毎フレーム送信
 			}
@@ -409,8 +421,8 @@ void TouchTableThread::sendContourData()
 		for (const auto &point : points)
 		{
 			nlohmann::json vertex;
-			vertex["x"] = point.x;
-			vertex["y"] = point.y;
+			vertex["x"] = w / 2.0f - point.x;
+			vertex["y"] = h / 2.0f - point.y;
 			vertices.push_back(vertex);
 		}
 
