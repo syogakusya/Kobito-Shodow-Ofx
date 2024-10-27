@@ -8,6 +8,8 @@
 #include <vector>
 #include <json.hpp> // nlohmann/json ライブラリを使用
 
+#include <opencv2/imgproc.hpp>
+
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -53,10 +55,6 @@ class TouchTableThread : public ofThread
 public:
 	TouchTableThread()
 	{
-		/*tuioServer_ = std::make_unique<TUIO::TuioServer>();
-		tuioServer_->setSourceName("TouchTableTracker");
-		tuioServer_->enableObjectProfile(false);
-		tuioServer_->enableBlobProfile(false);*/
 		perspectiveMat = cv::Mat::eye(3, 3, CV_64F);
 		contourFinder_ = std::make_unique<ofxCv::ContourFinder>();
 		tracker_ = std::make_unique<ofxCv::RectTrackerFollower<TouchTableTracker>>();
@@ -75,7 +73,8 @@ public:
 			float minAR,
 			float maxAR,
 			float th,
-			float gm);
+			float gm,
+			int br);
 	void getCameraImage(ofImage &image);
 
 	void setupSocket(const std::string &address, int port);
@@ -112,6 +111,7 @@ public:
 private:
 	bool isCalibMode;
 	int pickedCircle;
+	int maxBrightness;
 	ofVec2f pickOffset;
 	cv::Mat perspectiveMat;
 	cv::Mat resultImg;

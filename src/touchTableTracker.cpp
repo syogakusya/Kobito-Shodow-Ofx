@@ -126,11 +126,6 @@ void TouchTableThread::getCameraImage(ofImage &image)
 }
 void TouchTableThread ::adjustGamma(cv::Mat &img, float gamma)
 {
-	/*cv::Mat lookUpTable(1, 256, CV_8U);
-	unsigned char* p = lookUpTable.ptr();
-	for (int i = 0; i < 256; i++) {
-		p[i] = cv::saturate_cast<unsigned char>(pow(i / 255.0, gamma) * 255.0);
-	}*/
 	uchar LUT[256];
 	for (int i = 0; i < 256; i++)
 	{
@@ -172,12 +167,14 @@ void TouchTableThread::setParam(
 		float minAR,
 		float maxAR,
 		float th,
-		float gm)
+		float gm,
+		int br)
 {
 	minAreaRadius = minAR;
 	maxAreaRadius = maxAR;
 	threshold = th;
 	gamma = gm;
+	maxBrightness = br;
 	lock();
 	contourFinder_->setThreshold(threshold);
 	contourFinder_->setMinAreaRadius(minAreaRadius);
@@ -191,7 +188,7 @@ void TouchTableThread::setParam(
 void TouchTableThread::threadedFunction()
 {
 	contourFinder_->setAutoThreshold(false); // 自動閾値設定をオフにする
-	contourFinder_->setInvert(false);				 // 反転をオフにする
+	contourFinder_->setInvert(false);			 // 反転をオフにする
 	while (isThreadRunning())
 	{
 		lock();
@@ -205,7 +202,7 @@ void TouchTableThread::threadedFunction()
 
 				// 黒色の範囲を定義
 				cv::Scalar lowerBlack = cv::Scalar(0, 0, 0);
-				cv::Scalar upperBlack = cv::Scalar(180, 255, 50); // 明度を調整して黒の範囲を設定
+				cv::Scalar upperBlack = cv::Scalar(180, 255, maxBrightness); // 明度を調整して黒の範囲を設定
 
 				cv::Mat blackMask;
 				cv::inRange(hsv, lowerBlack, upperBlack, blackMask);
@@ -219,7 +216,6 @@ void TouchTableThread::threadedFunction()
 				adjustGamma(blackMask, gamma);
 
 				resultImg = (isCalibMode) ? img : blackMask.clone();
-				contourFinder_->setThreshold(threshold); // 閾値を設定
 				contourFinder_->findContours(blackMask);
 				tracker_->track(contourFinder_->getBoundingRects());
 				sendContourData(); // 毎フレーム送信
@@ -414,11 +410,16 @@ void TouchTableThread::sendContourData()
 
 	for (int i = 0; i < contourFinder_->size(); i++)
 	{
-		nlohmann::json contour;
 		std::vector<cv::Point> points = contourFinder_->getContour(i);
+
+		std::vector<cv::Point> approx;
+		double epsilon = 0.02 * cv::arcLength(points, true); // 輪郭の周囲長に応じて調整
+		cv::approxPolyDP(points, approx, epsilon, true);
+
+		nlohmann::json contour;
 		nlohmann::json vertices = nlohmann::json::array();
 
-		for (const auto &point : points)
+		for (const auto &point : approx)
 		{
 			nlohmann::json vertex;
 			vertex["x"] = w / 2.0f - point.x;
@@ -430,7 +431,15 @@ void TouchTableThread::sendContourData()
 		contours.push_back(contour);
 	}
 
-	root["contours"] = contours;
+	if (contours.empty())
+	{
+		ofLogNotice("TouchTableThread") << "輪郭が見つかりませんでした。";
+		root["contours"] = nlohmann::json::array();  // 空の配列を設定
+	}
+	else
+	{
+		root["contours"] = contours;
+	}
 
 	std::string json_str = root.dump() + "\n"; // 改行を追加
 

@@ -47,6 +47,8 @@ public:
 	ofParameter<float> gamma_;
 	ofParameter<bool> isCalibMode_;
 
+	ofParameter<int> maxBrightness_;
+
 	bool drawGui = false;
 
 	void saveParam();

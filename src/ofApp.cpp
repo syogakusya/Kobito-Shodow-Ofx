@@ -12,7 +12,7 @@ void ofApp::setup()
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	cam.setVerbose(true);
 	cam.listDevices();
-	cam.setDeviceID(1);
+	cam.setDeviceID(0);
 
 	ofSetVerticalSync(true);
 	ofBackground(0);
@@ -21,11 +21,12 @@ void ofApp::setup()
 
 	gui.setup();
 	// gui.setPosition(480, 20);
-	gui.add(minAreaRadius_.set("MinAreaRadius", 10.0, 0, 30.0));
-	gui.add(maxAreaRadius_.set("MaxAreaRadius", 100, 0, 500));
+	gui.add(minAreaRadius_.set("MinAreaRadius", 10.0, 0, 100.0));
+	gui.add(maxAreaRadius_.set("MaxAreaRadius", 50, 0, 500));
 	gui.add(threshold_.set("Threshold", 128, 0, 255));
 	gui.add(gamma_.set("Gamma", 0.5, 0.1, 60));
 	gui.add(isCalibMode_.set("Calibration", false));
+	gui.add(maxBrightness_.set("MaxBrightness", 50, 0, 255));
 
 	// OpenCVの並列処理を無効化
 	cv::setNumThreads(0);
@@ -59,7 +60,7 @@ void ofApp::update()
 	}
 	touchTableTracker_->setCalibMode(isCalibMode_);
 	touchTableTracker_->setCamera(&cam);
-	touchTableTracker_->setParam(minAreaRadius_, maxAreaRadius_, threshold_, gamma_);
+	touchTableTracker_->setParam(minAreaRadius_, maxAreaRadius_, threshold_, gamma_, maxBrightness_);
 }
 
 //--------------------------------------------------------------
@@ -68,7 +69,8 @@ void ofApp::draw()
 	// cam.draw(0, 0);
 	if (cameraImg.isAllocated())
 	{
-		float scale = min((float)ofGetWidth() / cameraImg.getWidth(), (float)ofGetHeight() / cameraImg.getHeight());
+		float scale = min((float)ofGetWidth() / cameraImg.getWidth(),
+			(float)ofGetHeight() / cameraImg.getHeight());
 		cameraImg.draw(0, 0, cameraImg.getWidth() * scale, cameraImg.getHeight() * scale);
 	}
 
