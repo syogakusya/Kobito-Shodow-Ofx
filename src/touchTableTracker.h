@@ -108,6 +108,13 @@ public:
 	void setCalib();
 	void setPerspective(std::vector<ofVec2f> circles);
 
+#ifdef _WIN32
+	SOCKET socketFd;
+#else
+	int socketFd;
+#endif
+	std::atomic<bool> socketConnected;
+
 private:
 	bool isCalibMode;
 	int pickedCircle;
@@ -116,11 +123,4 @@ private:
 	cv::Mat perspectiveMat;
 	cv::Mat resultImg;
 	void drawSrcCircle();
-
-#ifdef _WIN32
-	SOCKET socketFd;
-#else
-	int socketFd;
-#endif
-	std::atomic<bool> socketConnected;
 };

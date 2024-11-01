@@ -413,7 +413,7 @@ void TouchTableThread::sendContourData()
 		std::vector<cv::Point> points = contourFinder_->getContour(i);
 
 		std::vector<cv::Point> approx;
-		double epsilon = 0.02 * cv::arcLength(points, true); // 輪郭の周囲長に応じて調整
+		double epsilon = 0.01 * cv::arcLength(points, true); // 輪郭の周囲長に応じて調整
 		cv::approxPolyDP(points, approx, epsilon, true);
 
 		nlohmann::json contour;
@@ -433,7 +433,6 @@ void TouchTableThread::sendContourData()
 
 	if (contours.empty())
 	{
-		ofLogNotice("TouchTableThread") << "輪郭が見つかりませんでした。";
 		root["contours"] = nlohmann::json::array();  // 空の配列を設定
 	}
 	else

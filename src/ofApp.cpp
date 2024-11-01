@@ -12,7 +12,7 @@ void ofApp::setup()
 	ofSetLogLevel(OF_LOG_VERBOSE);
 	cam.setVerbose(true);
 	cam.listDevices();
-	cam.setDeviceID(0);
+	cam.setDeviceID(1);
 
 	ofSetVerticalSync(true);
 	ofBackground(0);
@@ -113,6 +113,14 @@ void ofApp::keyPressed(int key)
 	{
 		cam.close();
 		cam.setup(w, h);
+	}
+	if (key == 's') {
+#ifdef _WIN32
+		closesocket(touchTableTracker_->socketFd);
+#else
+		close(touchTableTracker_->socketFd);
+#endif
+		touchTableTracker_->setupSocket("127.0.0.1", 2001);
 	}
 }
 
